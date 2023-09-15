@@ -1,16 +1,21 @@
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Scanner;
 
 
-// TODO: remove useless methods
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Communication {
 
     private static Communication instance;
-    private static Scanner scanner = new Scanner(System.in);
+    private static final Scanner scanner = new Scanner(System.in);
+
+    @Setter
+    private long dataFileRecordPosition;
+    @Setter
+    private long indexFilePageNumberPosition;
 
     public static Communication getInstance() {
         if (instance == null) {
@@ -37,13 +42,21 @@ public class Communication {
         System.out.println(message);
     }
 
+    public void sayDataFileRecordParameters(String parametersInString) {
+        System.out.println(dataFileRecordPosition++ + ") " + parametersInString);
+    }
+
+    public void sayIndexFileNodePage(String page) {
+        System.out.println(indexFilePageNumberPosition++ + ") " + page);
+    }
+
     public RecordsSource whatRecordsSource() {
         System.out.println("---------------------------------");
         System.out.println(
                 """
                         What records source do you want? (type the number)
-                        1. Put records manually.
-                        2. Records are in the file.
+                        1. Input commands MANUALLY.
+                        2. Commands in the TEST FILE.
                         """
         );
 
@@ -61,67 +74,31 @@ public class Communication {
         }
     }
 
-    public Long recordsNumber() {
-        System.out.println("---------------------------------");
-        System.out.println("How many records?");
-
-        return Long.parseLong(scanner.nextLine());
-    }
-
     public String testFilePath() {
         System.out.println("---------------------------------");
         System.out.println("What is the test file path?");
         return scanner.nextLine();
     }
 
-    public boolean whetherStartSort() {
-        System.out.println("---------------------------------");
-        System.out.println("Start sort? (type: 'yes' or 'no')");
-        String input = scanner.nextLine();
-        switch (input) {
-            case "yes" -> {
-                return true;
-            }
-            case "no" -> {
-                return false;
-            }
-            default -> {
-                say("'" + input + "' command is invalid.");
-                return false;
-            }
-        }
-    }
-
-    public boolean whetherPrintFile() {
-        System.out.println("Show file? (type: 'yes' or 'no')");
-        String input = scanner.nextLine();
-        switch (input) {
-            case "yes" -> {
-                return true;
-            }
-            case "no" -> {
-                return false;
-            }
-            default -> {
-                say("'" + input + "' command is invalid.");
-                return false;
-            }
-        }
-    }
-
     public Operation getOperation() {
         System.out.println("---------------------------------");
         while (true) {
             String input;
-            System.out.println("What operation: (a)dd, (d)elete, (f)inish?");
+            System.out.println("What operation: (s)earch, (o)rdered traverse, (a)dd, (f)inish?");
             input = scanner.nextLine();
             switch (input) {
+                case "s" -> {
+                    return Operation.SEARCH;
+                }
+                case "o" -> {
+                    return Operation.ORDERED_TRAVERSE;
+                }
                 case "a" -> {
                     return Operation.ADD;
                 }
-                case "d" -> {
-                    return Operation.DELETE;
-                }
+//                case "d" -> {
+//                    return Operation.DELETE;
+//                }
                 case "f" -> {
                     return Operation.FINISH;
                 }
@@ -133,26 +110,44 @@ public class Communication {
     public Command whatToDo() {
         Operation operation = getOperation();
         Command command = new Command(operation);
-        if (operation == Operation.FINISH) {
-            return command;
+        if (operation == Operation.ADD || operation == Operation.DELETE) {
+            do {
+                System.out.println(getTypeInKeyMessage());
+                command.setKey(Long.parseLong(scanner.nextLine()));
+
+            } while (ifKeyInRange(command.getKey()));
+
+            String[] parameters;
+            do {
+                System.out.println(getTypeInParametersMessage());
+                parameters = scanner.nextLine().split(" ");
+
+            } while (!ifParametersCorrect(parameters));
+
+            command.setParameters(parameters);
+
+        } else if (operation == Operation.SEARCH) {
+            do {
+                System.out.println(getTypeInKeyMessage());
+                command.setKey(Long.parseLong(scanner.nextLine()));
+
+            } while (ifKeyInRange(command.getKey()));
         }
 
-        do {
-            System.out.println(getTypeInKeyMessage());
-            command.setKey(Integer.parseInt(scanner.nextLine()));
-
-        } while (ifKeyInRange(command.getKey()));
-
-        String[] parameters;
-        do {
-            System.out.println(getTypeInParametersMessage());
-            parameters = scanner.nextLine().split(" ");
-
-        } while (!ifParametersCorrect(parameters));
-
-        command.setParameters(parameters);
-
         return command;
+    }
+
+    public boolean whetherPrintFiles() {
+        System.out.println("Show files? (y)es, (n)o");
+        String input = scanner.nextLine();
+        switch (input) {
+            case "y" -> { return true; }
+            case "n" -> { return false; }
+            default -> {
+                say("'" + input + "' command is invalid.");
+                return false;
+            }
+        }
     }
 
     private String getTypeInKeyMessage() {
@@ -165,7 +160,7 @@ public class Communication {
 
     private String getTypeInParametersMessage() {
         return "Type in " +
-                Consts.PARAMETER_NUMBERS.getValue() +
+                Consts.PARAMETERS_NUMBER.getValue() +
                 " whole parameters delimited by spaces in-between (ex. '" +
                 Consts.MIN_PARAMETER.getValue() +
                 " " +
@@ -177,12 +172,12 @@ public class Communication {
                 "'):";
     }
 
-    private boolean ifKeyInRange(int key) {
+    private boolean ifKeyInRange(Long key) {
         return key < Consts.MIN_KEY.getValue() || key > Consts.MAX_KEY.getValue();
     }
 
     private boolean ifParametersCorrect(String[] parameters) {
-        if (!(parameters.length == Consts.PARAMETER_NUMBERS.getValue())) {
+        if (!(parameters.length == Consts.PARAMETERS_NUMBER.getValue())) {
             return false;
         }
 
