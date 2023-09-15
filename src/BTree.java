@@ -369,7 +369,7 @@ public class BTree {
 
         fileManager.writeNodePageToFile(indexFile, leftNodePage);
         fileManager.writeNodePageToFile(indexFile, rightNodePage);
-        fileManager.flushDataBlockBuffer(dataFile);
+        fileManager.flushDataBlockBuffer(dataFile, true);
 
         middleRecord.setNodePagePositionInIndex(ancestorNodePage.getPositionInIndex());
         overwrite(ancestorNodePage, recordByChildPosition, middleRecord);
@@ -388,7 +388,7 @@ public class BTree {
 
             fileManager.writeNodePageToFile(indexFile, nodePage);
             fileManager.writeNodePageToFile(indexFile, newNodePage);
-            fileManager.flushDataBlockBuffer(dataFile);
+            fileManager.flushDataBlockBuffer(dataFile, true);
 
             return newNodePage;
 
@@ -403,7 +403,7 @@ public class BTree {
 
             fileManager.writeNodePageToFile(indexFile, nodePage);
             fileManager.writeNodePageToFile(indexFile, newNodePage);
-            fileManager.flushDataBlockBuffer(dataFile);
+            fileManager.flushDataBlockBuffer(dataFile, true);
 
             return newNodePage;
         }
@@ -415,7 +415,7 @@ public class BTree {
                 NodePage childPage = fileManager.getNodePage(indexFile, record.getLeftChildPositionInIndex());
                 childPage.setAncestorPositionInIndex(nodePage.getPositionInIndex());
                 fileManager.writeNodePageToFile(indexFile, childPage);
-                fileManager.flushDataBlockBuffer(dataFile);
+                fileManager.flushDataBlockBuffer(dataFile, true);
             }
 
             if (nodePage.ifLastElement(nodePage.getRecords().indexOf(record))
@@ -424,7 +424,7 @@ public class BTree {
                 NodePage childPage = fileManager.getNodePage(indexFile, record.getRightChildPositionInIndex());
                 childPage.setAncestorPositionInIndex(nodePage.getPositionInIndex());
                 fileManager.writeNodePageToFile(indexFile, childPage);
-                fileManager.flushDataBlockBuffer(dataFile);
+                fileManager.flushDataBlockBuffer(dataFile, true);
                 break;
             }
         }

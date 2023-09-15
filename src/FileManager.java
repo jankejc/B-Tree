@@ -71,14 +71,16 @@ public class FileManager {
     public Long writeParametersToFile(File file, String stringToFile) {
         dataBlockBuffer.add(stringToFile);
         if (dataBlockBuffer.size() == Consts.DATA_FILE_RECORDS_NUMBER_IN_BLOCK.getValue()) {
-            flushDataBlockBuffer(file);
+            flushDataBlockBuffer(file, true);
         }
 
         return ++positionInDataFile;
     }
 
-    public void flushDataBlockBuffer(File file) {
-        wrotePages++;
+    public void flushDataBlockBuffer(File file, boolean count) {
+        if (count) {
+            wrotePages++;
+        }
         if (dataBlockBuffer.size() == 0) {
             return;
         }
@@ -116,7 +118,7 @@ public class FileManager {
 
     public NodePage getNodePage(File indexFile, Long indexPosition) {
         byte[] indexPage = new byte[Consts.NODE_PAGE_BYTES_SIZE.getValue()];
-        int pageBytesRead = setPageBlock(indexFile, indexPosition * Consts.NODE_PAGE_BYTES_SIZE.getValue(), indexPage);
+        int pageBytesRead = setPageBlock(indexFile, indexPosition * Consts.NODE_PAGE_BYTES_SIZE.getValue(), indexPage, true);
         if (pageBytesRead != Consts.NODE_PAGE_BYTES_SIZE.getValue()) {
             communication.say("Something went wrong with getting node page from file!");
         }
@@ -129,7 +131,7 @@ public class FileManager {
         communication.say("");
         communication.say("DATA FILE");
 
-        flushDataBlockBuffer(dataFile);
+        flushDataBlockBuffer(dataFile, false);
         communication.setDataFileRecordPosition(0);
         long bytesPosition = 0;
         byte[] block = new byte[Consts.DATA_FILE_BLOCK_SIZE_IN_BYTES.getValue()];
@@ -137,7 +139,8 @@ public class FileManager {
             int bytesRead = setPageBlock(
                     dataFile,
                     bytesPosition,
-                    block
+                    block,
+                    false
             );
             if (bytesRead == 0) {
                 communication.say("Exception in getting next block!");
@@ -175,7 +178,8 @@ public class FileManager {
             int bytesRead = setPageBlock(
                     indexFile,
                     bytePosition,
-                    page
+                    page,
+                    false
             );
             if (bytesRead == 0) {
                 communication.say("Exception in getting next page!");
@@ -222,7 +226,7 @@ public class FileManager {
                 * Consts.DATA_FILE_BLOCK_SIZE_IN_BYTES.getValue();
         long positionInBlock = position % Consts.DATA_FILE_RECORDS_NUMBER_IN_BLOCK.getValue();
         byte[] block = new byte[Consts.DATA_FILE_BLOCK_SIZE_IN_BYTES.getValue()];
-        int bytesRead = setPageBlock(dataFile, blockBytesPosition, block);
+        int bytesRead = setPageBlock(dataFile, blockBytesPosition, block, true);
 
         List<Long[]> dataRecordsList = new ArrayList<>();
         processDataFileBlock(
@@ -237,9 +241,12 @@ public class FileManager {
     private int setPageBlock(
             File file,
             Long bytePosition,
-            byte[] pageBlock
+            byte[] pageBlock,
+            boolean count
     ) {
-        readPages++;
+        if (count) {
+            readPages++;
+        }
         try (RandomAccessFile raf = new RandomAccessFile(file, "r")) {
             raf.seek(bytePosition);
 
