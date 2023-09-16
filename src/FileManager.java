@@ -1,4 +1,5 @@
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.io.*;
@@ -14,6 +15,11 @@ public class FileManager {
     private static FileManager instance;
     private final Communication communication = Communication.getInstance();
     private Long positionInDataFile = -1L;
+
+    private Long recordsNumber = 0L;
+
+    @Getter
+    private List<Stat> stats = new ArrayList<>();
 
     private Long readPages = 0L;
     private Long wrotePages = 0L;
@@ -33,6 +39,10 @@ public class FileManager {
         communication.say("Wrote pages: " + wrotePages);
         readPages = 0L;
         wrotePages = 0L;
+    }
+
+    public void addStat(Operation operation) {
+        stats.add(new Stat(++recordsNumber, readPages, wrotePages, operation));
     }
 
     // test file purpose

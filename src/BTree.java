@@ -23,8 +23,12 @@ public class BTree {
     public void build() {
         if (recordsSource == RecordsSource.MANUALLY) {
             interactBuild();
+        } else if (recordsSource == RecordsSource.EXPERIMENT) {
+            commandsFromExperimentFile(communication.experimentFilePath());
+            communication.printExperimentResults(fileManager.getStats());
         } else {
             commandsFromTestFile(communication.testFilePath());
+            interactBuild();
         }
     }
 
@@ -41,8 +45,16 @@ public class BTree {
         for (Command command : commands) {
             execute(command);
         }
-        interactBuild();
     }
+
+    private void commandsFromExperimentFile(String experimentFilePath) {
+        List<Command> commands = Command.getCommandsFromFile(experimentFilePath);
+        for (Command command : commands) {
+            executeExperiment(command);
+        }
+    }
+
+
 
     private void execute(Command command) {
         switch (command.getOperation()) {
@@ -67,6 +79,28 @@ public class BTree {
                     printFiles();
                 }
                 fileManager.printDiskOperations();
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void executeExperiment(Command command) {
+        switch (command.getOperation()) {
+            case SEARCH -> {
+                Record closestRecord = search(rootPositionInIndex, command.getKey(), null);
+                if (closestRecord != null && closestRecord.getKey().equals(command.getKey())) {
+                    printRecord(closestRecord);
+                }
+                fileManager.addStat(Operation.SEARCH);
+            }
+            case ORDERED_TRAVERSE -> {
+                orderedTraverse(rootPositionInIndex);
+                fileManager.addStat(Operation.ORDERED_TRAVERSE);
+            }
+            case ADD -> {
+                add(command);
+                fileManager.addStat(Operation.ADD);
             }
             default -> {
             }

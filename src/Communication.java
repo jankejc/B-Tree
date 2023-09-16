@@ -1,9 +1,14 @@
+import com.github.plot.Plot;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Scanner;
 
+import java.awt.*;
+import java.io.IOException;
+import java.util.List;
+import java.util.Scanner;
+import java.util.stream.Collectors;
 
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -57,6 +62,7 @@ public class Communication {
                         What records source do you want? (type the number)
                         1. Input commands MANUALLY.
                         2. Commands in the TEST FILE.
+                        3. Experiment.
                         """
         );
 
@@ -68,6 +74,9 @@ public class Communication {
             case 2 -> {
                 return RecordsSource.TEST_FILE;
             }
+            case 3 -> {
+                return RecordsSource.EXPERIMENT;
+            }
             default -> {
                 return RecordsSource.UNKNOWN;
             }
@@ -78,6 +87,53 @@ public class Communication {
         System.out.println("---------------------------------");
         System.out.println("What is the test file path?");
         return scanner.nextLine();
+    }
+
+    public String experimentFilePath() {
+        System.out.println("---------------------------------");
+        System.out.println("What is the experiment file path?");
+        return scanner.nextLine();
+    }
+
+    public void printExperimentResults(List<Stat> stats) {
+        System.out.println("---------------------------------");
+        System.out.println(Operation.ORDERED_TRAVERSE + " under experiment...");
+        createPlot(Operation.ORDERED_TRAVERSE, stats.stream().filter(stat -> stat.getOperation() == Operation.ORDERED_TRAVERSE).collect(Collectors.toList()));
+    }
+
+    private void createPlot(Operation operation, List<Stat> stats) {
+        com.github.plot.Plot.Data dataRead = new Plot.Data().xy(
+                stats.stream()
+                        .map(Stat::getReadPages)
+                        .map(Long::doubleValue)
+                        .toList(),
+                stats.stream()
+                        .map(Stat::getRecordsNumber)
+                        .map(Long::doubleValue)
+                        .toList()
+        );
+        com.github.plot.Plot.Data dataWrote = new Plot.Data().xy(
+                stats.stream()
+                        .map(Stat::getWrotePages)
+                        .map(Long::doubleValue)
+                        .toList(),
+                stats.stream()
+                        .map(Stat::getRecordsNumber)
+                        .map(Long::doubleValue)
+                        .toList()
+        );
+        com.github.plot.Plot plot = com.github.plot.Plot.plot(null).
+                series("Read pages", dataRead, Plot.seriesOpts().color(Color.BLUE)).
+                series("Wrote pages", dataWrote, Plot.seriesOpts().color(Color.BLACK)).
+                xAxis("records number", Plot.axisOpts().
+                        range(0, 200)).
+                yAxis("pages", Plot.axisOpts().
+                        range(0, 60));
+        try {
+            plot.save(operation + "_test", "png");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public Operation getOperation() {
@@ -141,8 +197,12 @@ public class Communication {
         System.out.println("Show files? (y)es, (n)o");
         String input = scanner.nextLine();
         switch (input) {
-            case "y" -> { return true; }
-            case "n" -> { return false; }
+            case "y" -> {
+                return true;
+            }
+            case "n" -> {
+                return false;
+            }
             default -> {
                 say("'" + input + "' command is invalid.");
                 return false;
